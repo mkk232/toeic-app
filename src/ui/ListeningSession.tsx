@@ -1,26 +1,19 @@
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import { db, getSettings, type ListeningItem } from "../db";
 import { todayStr } from "../date";
 import { answerListening } from "../lectures";
-import { speak, stopSpeaking } from "../speech";
+import { createPlayer } from "../speech";
 import { choiceClass } from "./QuizSession";
 import { requestTopUp } from "../prefetchSignal";
 import { PREFETCHED_EVENT } from "../prefetch";
 
 const LETTERS = ["A", "B", "C"];
-const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** 질문 → 쉼 → (A)(B)(C) 대답을 차례로 읽음 */
-async function playItem(item: ListeningItem, rate: number) {
-  const opts = { lang: item.accent, rate };
-  await speak(item.question, opts);
-  for (let i = 0; i < item.choices.length; i++) {
-    await pause(600);
-    await speak(`${LETTERS[i]}. ${item.choices[i]}`, opts);
-  }
-}
+/** 질문 → 쉼 → (A)(B)(C) 대답 순서로 읽을 문장들 */
+export const listeningParts = (item: ListeningItem) => [item.question, ...item.choices.map((c, i) => `${LETTERS[i]}. ${c}`)];
 
 export function ListeningSession() {
+  const player = useMemo(() => createPlayer(), []);
   const [items, setItems] = useState<ListeningItem[] | null>(null);
   const [pos, setPos] = useState(0);
   const [chosen, setChosen] = useState<number | null>(null);
@@ -40,7 +33,7 @@ export function ListeningSession() {
     window.addEventListener(PREFETCHED_EVENT, onArrive);
     return () => {
       window.removeEventListener(PREFETCHED_EVENT, onArrive);
-      stopSpeaking();
+      player.stop();
     };
   }, []);
 
@@ -68,10 +61,13 @@ export function ListeningSession() {
   }
 
   async function play() {
-    if (playing) return;
+    if (playing) {
+      player.stop();
+      return setPlaying(false);
+    }
     setPlaying(true);
     try {
-      await playItem(item, rate);
+      await player.play(listeningParts(item), { lang: item.accent, rate });
     } finally {
       setPlaying(false);
     }
@@ -79,12 +75,13 @@ export function ListeningSession() {
 
   async function pick(i: number) {
     if (chosen !== null) return;
-    stopSpeaking();
+    player.stop();
     setChosen(i);
     if (await answerListening(item.id!, i, todayStr())) setScore((s) => s + 1);
   }
 
   function next() {
+    player.stop();
     setPos((p) => p + 1);
     setChosen(null);
     if (pos + 1 >= items!.length) requestTopUp();
@@ -98,7 +95,7 @@ export function ListeningSession() {
       </div>
       <section class="card stack" style={{ alignItems: "stretch" }}>
         <p class="muted small" style={{ margin: 0 }}>질문 하나와 대답 3개를 들려줘요. 알맞은 대답을 고르세요.</p>
-        <button class="primary" onClick={play} disabled={playing}>{playing ? "재생 중…" : chosen === null ? "▶ 듣기" : "▶ 다시 듣기"}</button>
+        <button class="primary" onClick={play}>{playing ? "■ 멈춤" : chosen === null ? "▶ 듣기" : "▶ 다시 듣기"}</button>
       </section>
       <div class="row">
         {LETTERS.map((l, i) => (

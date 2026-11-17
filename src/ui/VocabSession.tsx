@@ -3,7 +3,7 @@ import { db, getSettings, type Word } from "../db";
 import { todayStr } from "../date";
 import { getTodayPlan, gradeWord } from "../dailyQueue";
 import type { Grade } from "../srs";
-import { speak } from "../speech";
+import { speak, stopSpeaking } from "../speech";
 import { makeClient } from "../claude/client";
 import { generateExamples } from "../claude/generate";
 
@@ -40,6 +40,7 @@ export function VocabSession() {
       const dueWords = (await db.words.bulkGet(plan.dueCards.map((c) => c.wordId))).filter((w): w is Word => !!w);
       setQueue([...dueWords, ...plan.newWords].map((word) => ({ word, retry: false })));
     })();
+    return () => stopSpeaking();
   }, []);
 
   const cur = queue?.[pos];
