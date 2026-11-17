@@ -6,3 +6,6 @@ dev-dist/
 *.xlsx
 *.xls
 coverage/
+.superpowers/
+.private-docs/
+docs/superpowers/
