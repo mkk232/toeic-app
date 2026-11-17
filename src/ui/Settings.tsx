@@ -1,6 +1,8 @@
 import { useEffect, useState } from "preact/hooks";
 import { getSettings, saveSettings, type Settings as S } from "../db";
 import { importWordsFromFile } from "../wordImport";
+import { backupFileName, exportBackup, importBackup } from "../backup";
+import { todayStr } from "../date";
 
 export function Settings() {
   const [s, setS] = useState<S | null>(null);
@@ -39,6 +41,34 @@ export function Settings() {
     } finally {
       setBusy(false);
       input.value = "";
+    }
+  }
+
+  async function onExport() {
+    const blob = await exportBackup();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = backupFileName(todayStr());
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    setMsg("백업 파일을 만들었어요. \"파일에 저장\"을 골라 주세요.");
+  }
+
+  async function onImport(e: Event) {
+    const input = e.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+    if (!confirm("지금 기록을 백업 내용으로 바꿔요. 계속할까요?")) return;
+    try {
+      await importBackup(file);
+      setS(await getSettings());
+      setMsg("백업을 불러왔어요.");
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "백업을 불러오지 못했어요.");
     }
   }
 
@@ -92,9 +122,14 @@ export function Settings() {
         </section>
       )}
 
-      <section class="card stack" id="backup-slot">
+      <section class="card stack">
         <h2>백업</h2>
-        <p class="muted small">준비 중이에요.</p>
+        <p class="muted small">앱을 지우면 공부 기록도 사라져요. 일주일에 한 번 "파일"(iCloud Drive)에 내보내 두세요. API 키는 백업에 안 들어가요.</p>
+        <button onClick={onExport}>백업 내보내기</button>
+        <label class="btn" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+          백업 불러오기
+          <input type="file" accept=".json,application/json" onChange={onImport} style={{ display: "none" }} aria-label="백업 불러오기" />
+        </label>
       </section>
     </main>
   );

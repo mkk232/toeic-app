@@ -6,7 +6,7 @@ import { Lectures } from "./Lectures";
 import { QuizSession } from "./QuizSession";
 import { WrongNotes } from "./WrongNotes";
 import { ListeningSession } from "./ListeningSession";
-
+import { Home } from "./Home";
 import type { Route } from "./nav";
 
 function currentRoute(): Route {
@@ -14,18 +14,8 @@ function currentRoute(): Route {
   return (ROUTES as Record<string, unknown>)[r] ? (r as Route) : "/";
 }
 
-function Placeholder({ title }: { title: string }) {
-  return (
-    <main class="screen">
-      <h1>{title}</h1>
-      <p class="muted">준비 중이에요.</p>
-      <a class="back" href="#/">← 홈</a>
-    </main>
-  );
-}
-
 const ROUTES: Record<Route, ComponentType> = {
-  "/": () => <Placeholder title="오늘 할 일" />,
+  "/": Home,
   "/vocab": VocabSession,
   "/lectures": Lectures,
   "/quiz": QuizSession,
