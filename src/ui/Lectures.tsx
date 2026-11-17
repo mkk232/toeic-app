@@ -108,7 +108,7 @@ export function Lectures() {
                   <div>{l.no}강 {l.title}</div>
                   {d && <div class="muted small">끝냄 {d}</div>}
                 </div>
-                <button class={d ? "" : "primary"} onClick={() => finish(l.no)}>{d ? "또 끝냄" : "끝냄"}</button>
+                <button class={d ? "" : "primary"} aria-label={`${l.no}강 ${d ? "또 끝냄" : "끝냄"}`} onClick={() => finish(l.no)}>{d ? "또 끝냄" : "끝냄"}</button>
               </div>
             );
           })}

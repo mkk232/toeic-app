@@ -2,6 +2,7 @@ import { useEffect, useState } from "preact/hooks";
 import type { Quiz } from "../db";
 import { todayStr } from "../date";
 import { answerQuiz, nextQuizzes } from "../lectures";
+import { PREFETCHED_EVENT } from "../prefetch";
 
 const LETTERS = ["A", "B", "C", "D"];
 
@@ -26,6 +27,10 @@ export function QuizSession() {
   }
   useEffect(() => {
     load();
+    // 비어 있을 때 새 문제가 도착하면 바로 보여 줌 (풀던 중이면 그대로)
+    const onArrive = () => nextQuizzes(5).then((b) => setBatch((prev) => (prev && prev.length ? prev : b)));
+    window.addEventListener(PREFETCHED_EVENT, onArrive);
+    return () => window.removeEventListener(PREFETCHED_EVENT, onArrive);
   }, []);
 
   if (!batch) return <main class="screen"><p class="muted">불러오는 중…</p></main>;

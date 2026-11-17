@@ -5,6 +5,7 @@ import { answerListening } from "../lectures";
 import { speak, stopSpeaking } from "../speech";
 import { choiceClass } from "./QuizSession";
 import { requestTopUp } from "../prefetchSignal";
+import { PREFETCHED_EVENT } from "../prefetch";
 
 const LETTERS = ["A", "B", "C"];
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -28,12 +29,19 @@ export function ListeningSession() {
   const [score, setScore] = useState(0);
 
   useEffect(() => {
+    const loadOpen = async () =>
+      (await db.listening.toArray()).filter((i) => !i.answeredAt).sort((a, b) => (a.id ?? 0) - (b.id ?? 0)).slice(0, 5);
     (async () => {
       setRate((await getSettings()).speechRate);
-      const open = (await db.listening.toArray()).filter((i) => !i.answeredAt).sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
-      setItems(open.slice(0, 5));
+      setItems(await loadOpen());
     })();
-    return () => stopSpeaking();
+    // 비어 있을 때 새 문제가 도착하면 바로 보여 줌
+    const onArrive = () => loadOpen().then((b) => setItems((prev) => (prev && prev.length ? prev : b)));
+    window.addEventListener(PREFETCHED_EVENT, onArrive);
+    return () => {
+      window.removeEventListener(PREFETCHED_EVENT, onArrive);
+      stopSpeaking();
+    };
   }, []);
 
   if (!items) return <main class="screen"><p class="muted">불러오는 중…</p></main>;
