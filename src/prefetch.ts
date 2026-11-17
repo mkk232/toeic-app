@@ -11,14 +11,30 @@ export const PREFETCHED_EVENT = "toeic:prefetched";
 type Result = { quizzes: number; listening: number; examples: number; error?: string };
 
 let running: Promise<Result> | null = null;
+let again = false;
 
-/** 인터넷이 될 때 모자란 문제·예문을 채움. 동시에 두 번 돌지 않음 */
-export function topUp(today: string, client?: ClaudeLike): Promise<Result> {
-  if (!running) running = run(today, client).finally(() => (running = null));
+/**
+ * 인터넷이 될 때 모자란 문제·예문을 채움. 동시에 두 번 돌지 않음.
+ * 돌고 있는 중에 다시 부르면(예: 방금 강을 끝냄) 지금 것이 끝난 뒤 한 번 더 돈다.
+ * onStep: 단계 하나가 끝날 때마다 불림(화면을 빨리 갱신하려고).
+ */
+export function topUp(today: string, client?: ClaudeLike, onStep?: () => void): Promise<Result> {
+  if (running) {
+    again = true;
+    return running;
+  }
+  running = (async () => {
+    let r: Result;
+    do {
+      again = false;
+      r = await run(today, client, onStep);
+    } while (again);
+    return r;
+  })().finally(() => (running = null));
   return running;
 }
 
-async function run(today: string, client?: ClaudeLike): Promise<Result> {
+async function run(today: string, client?: ClaudeLike, onStep?: () => void): Promise<Result> {
   const settings = await getSettings();
   const result: Result = { quizzes: 0, listening: 0, examples: 0 };
   if (!settings.apiKey) return result;
@@ -30,6 +46,7 @@ async function run(today: string, client?: ClaudeLike): Promise<Result> {
     } catch (err) {
       result.error ??= toClaudeError(err).message;
     }
+    onStep?.();
   };
 
   const titles = new Map((await db.lectures.toArray()).map((l) => [l.no, l.title]));
@@ -93,18 +110,23 @@ export async function getLastPrefetch(): Promise<{ at: string; error?: string } 
   return (await db.kv.get("prefetch"))?.value as { at: string; error?: string } | undefined;
 }
 
+const announce = () => window.dispatchEvent(new Event(PREFETCHED_EVENT));
+
 async function runAndRecord() {
-  const r = await topUp(todayStr());
+  const r = await topUp(todayStr(), undefined, announce);
   await db.kv.put({ key: "prefetch", value: { at: new Date().toISOString(), error: r.error } });
-  window.dispatchEvent(new Event(PREFETCHED_EVENT));
+  announce();
 }
 
-/** 앱 시작 때 1번, 인터넷이 다시 될 때마다, 화면이 신호를 보낼 때마다 */
+/** 앱 시작 때 1번, 인터넷이 다시 될 때, 앱으로 돌아올 때, 화면이 신호를 보낼 때 */
 export function startAutoPrefetch(): void {
   const go = () => {
     if (navigator.onLine !== false) runAndRecord().catch(() => {});
   };
   window.addEventListener("online", go);
   window.addEventListener(TOPUP_EVENT, go);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") go();
+  });
   go();
 }

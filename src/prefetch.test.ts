@@ -111,6 +111,26 @@ describe("키 있음", () => {
     expect((await db.words.get("1-4"))?.examples).toBeUndefined();
   });
 
+  test("돌고 있을 때 다시 부르면, 끝난 뒤 한 번 더 돌아 방금 끝낸 강도 챙김", async () => {
+    await db.lectureDone.add({ lectureNo: 1, date: T });
+    const { c } = fakeClaude({ delay: 10 });
+    const first = topUp(T, c);
+    await new Promise((r) => setTimeout(r, 5));
+    await db.lectures.put({ no: 2, title: "문장 구조" });
+    await db.lectureDone.add({ lectureNo: 2, date: T });
+    await Promise.all([first, topUp(T, c)]);
+    const fresh = (await db.quizzes.toArray()).filter((q) => q.kind === "new");
+    expect(fresh.filter((q) => q.lectureNo === 2)).toHaveLength(5);
+  });
+
+  test("단계가 끝날 때마다 알려 줌", async () => {
+    await db.lectureDone.add({ lectureNo: 1, date: T });
+    const { c } = fakeClaude();
+    let steps = 0;
+    await topUp(T, c, () => steps++);
+    expect(steps).toBeGreaterThanOrEqual(4);
+  });
+
   test("동시에 두 번 불러도 한 번 분량만", async () => {
     await db.lectureDone.add({ lectureNo: 1, date: T });
     const { c, calls } = fakeClaude({ delay: 10 });

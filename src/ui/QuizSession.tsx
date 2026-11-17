@@ -1,8 +1,9 @@
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import type { Quiz } from "../db";
 import { todayStr } from "../date";
 import { answerQuiz, nextQuizzes } from "../lectures";
 import { PREFETCHED_EVENT } from "../prefetch";
+import { useEmptyReason } from "./useEmptyReason";
 
 const LETTERS = ["A", "B", "C", "D"];
 
@@ -18,8 +19,11 @@ export function QuizSession() {
   const [pos, setPos] = useState(0);
   const [chosen, setChosen] = useState<number | null>(null);
   const [score, setScore] = useState(0);
+  const started = useRef(false);
+  const emptyReason = useEmptyReason();
 
   async function load() {
+    started.current = false;
     setBatch(await nextQuizzes(5));
     setPos(0);
     setChosen(null);
@@ -27,8 +31,11 @@ export function QuizSession() {
   }
   useEffect(() => {
     load();
-    // 비어 있을 때 새 문제가 도착하면 바로 보여 줌 (풀던 중이면 그대로)
-    const onArrive = () => nextQuizzes(5).then((b) => setBatch((prev) => (prev && prev.length ? prev : b)));
+    // 아직 한 문제도 안 풀었으면 새로 온 문제(새 강 먼저)로 바꿔 보여 줌. 풀던 중이면 그대로.
+    const onArrive = () =>
+      nextQuizzes(5).then((b) => {
+        if (!started.current) setBatch(b);
+      });
     window.addEventListener(PREFETCHED_EVENT, onArrive);
     return () => window.removeEventListener(PREFETCHED_EVENT, onArrive);
   }, []);
@@ -40,7 +47,7 @@ export function QuizSession() {
       <main class="screen">
         <a class="back" href="#/">← 홈</a>
         <h1>강의 복습</h1>
-        <div class="banner">문제 준비 중이에요. 인터넷이 되면 자동으로 받아요.</div>
+        <div class="banner">{emptyReason}</div>
         <p class="muted small">강의를 끝냈으면 강의 화면에서 [끝냄]을 눌러 주세요.</p>
         <a class="btn" href="#/lectures" style={{ display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>강의 화면으로</a>
       </main>
@@ -62,6 +69,7 @@ export function QuizSession() {
 
   async function pick(i: number) {
     if (chosen !== null) return;
+    started.current = true;
     setChosen(i);
     if (await answerQuiz(q.id!, i, todayStr())) setScore((s) => s + 1);
   }

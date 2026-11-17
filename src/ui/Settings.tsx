@@ -3,6 +3,7 @@ import { getSettings, saveSettings, type Settings as S } from "../db";
 import { importWordsFromFile } from "../wordImport";
 import { backupFileName, exportBackup, importBackup } from "../backup";
 import { todayStr } from "../date";
+import { requestTopUp } from "../prefetchSignal";
 
 export function Settings() {
   const [s, setS] = useState<S | null>(null);
@@ -25,6 +26,7 @@ export function Settings() {
   async function onKeySave() {
     await update({ apiKey: keyDraft.trim() });
     setMsg(keyDraft.trim() ? "API 키를 저장했어요." : "API 키를 지웠어요.");
+    if (keyDraft.trim()) requestTopUp();
   }
 
   async function onFile(e: Event) {
@@ -35,6 +37,7 @@ export function Settings() {
     setMsg("단어를 불러오는 중이에요…");
     try {
       const r = await importWordsFromFile(file);
+      requestTopUp();
       setMsg(`새 단어 ${r.added}개, 바뀐 단어 ${r.updated}개를 불러왔어요.` + (r.skipped ? ` (읽지 못한 줄 ${r.skipped}개)` : ""));
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "단어를 불러오지 못했어요.");
@@ -67,6 +70,7 @@ export function Settings() {
       await importBackup(file);
       setS(await getSettings());
       setMsg("백업을 불러왔어요.");
+      requestTopUp();
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "백업을 불러오지 못했어요.");
     }

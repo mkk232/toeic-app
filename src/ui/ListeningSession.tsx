@@ -6,6 +6,7 @@ import { createPlayer } from "../speech";
 import { choiceClass } from "./QuizSession";
 import { requestTopUp } from "../prefetchSignal";
 import { PREFETCHED_EVENT } from "../prefetch";
+import { useEmptyReason } from "./useEmptyReason";
 
 const LETTERS = ["A", "B", "C"];
 
@@ -14,6 +15,7 @@ export const listeningParts = (item: ListeningItem) => [item.question, ...item.c
 
 export function ListeningSession() {
   const player = useMemo(() => createPlayer(), []);
+  const emptyReason = useEmptyReason();
   const [items, setItems] = useState<ListeningItem[] | null>(null);
   const [pos, setPos] = useState(0);
   const [chosen, setChosen] = useState<number | null>(null);
@@ -43,7 +45,7 @@ export function ListeningSession() {
       <main class="screen">
         <a class="back" href="#/">← 홈</a>
         <h1>듣기</h1>
-        <div class="banner">문제 준비 중이에요. 인터넷이 되면 자동으로 받아요.</div>
+        <div class="banner">{emptyReason}</div>
       </main>
     );
   }

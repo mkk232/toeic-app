@@ -51,12 +51,13 @@ export function Home() {
     window.addEventListener(PREFETCHED_EVENT, refresh);
     window.addEventListener("online", on);
     window.addEventListener("offline", off);
-    window.addEventListener("focus", refresh);
+    const onVisible = () => document.visibilityState === "visible" && refresh();
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       window.removeEventListener(PREFETCHED_EVENT, refresh);
       window.removeEventListener("online", on);
       window.removeEventListener("offline", off);
-      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
 
