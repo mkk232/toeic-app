@@ -5,6 +5,7 @@ import { VocabSession } from "./VocabSession";
 import { Lectures } from "./Lectures";
 import { QuizSession } from "./QuizSession";
 import { WrongNotes } from "./WrongNotes";
+import { ListeningSession } from "./ListeningSession";
 
 import type { Route } from "./nav";
 
@@ -28,7 +29,7 @@ const ROUTES: Record<Route, ComponentType> = {
   "/vocab": VocabSession,
   "/lectures": Lectures,
   "/quiz": QuizSession,
-  "/listening": () => <Placeholder title="듣기" />,
+  "/listening": ListeningSession,
   "/wrong": WrongNotes,
   "/settings": Settings,
 };
