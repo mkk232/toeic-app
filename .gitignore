@@ -1,0 +1,8 @@
+node_modules/
+dist/
+dev-dist/
+.worktrees/
+.env*
+*.xlsx
+*.xls
+coverage/
