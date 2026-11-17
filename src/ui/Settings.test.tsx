@@ -9,6 +9,22 @@ beforeEach(async () => {
 });
 afterEach(cleanup);
 
+test("백업 내보내기: 공유 시트를 쓸 수 있으면 파일로 공유", async () => {
+  const shared: any[] = [];
+  Object.assign(navigator, {
+    canShare: () => true,
+    share: async (data: any) => { shared.push(data); },
+  });
+  render(<Settings />);
+  fireEvent.click(await screen.findByRole("button", { name: "백업 내보내기" }));
+  await waitFor(() => expect(shared).toHaveLength(1));
+  const file: File = shared[0].files[0];
+  expect(file.name).toMatch(/^toeic-backup-\d{4}-\d{2}-\d{2}\.json$/);
+  expect(file.type).toBe("application/json");
+  delete (navigator as any).canShare;
+  delete (navigator as any).share;
+});
+
 test("키를 저장하면 바로 문제 받기를 요청함", async () => {
   let asked = 0;
   const on = () => asked++;

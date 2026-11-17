@@ -49,7 +49,19 @@ export function Settings() {
 
   async function onExport() {
     const blob = await exportBackup();
-    const url = URL.createObjectURL(blob);
+    const file = new File([blob], backupFileName(todayStr()), { type: "application/json" });
+    // 아이폰 홈 화면 앱은 다운로드가 막힐 수 있어 공유 시트("파일에 저장")를 먼저 씀
+    const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+    if (nav.canShare?.({ files: [file] }) && nav.share) {
+      try {
+        await nav.share({ files: [file], title: "토익 공부 백업" });
+        setMsg("백업을 보냈어요. \"파일에 저장\"으로 저장했는지 확인해 주세요.");
+      } catch (err) {
+        setMsg((err as Error)?.name === "AbortError" ? "백업을 취소했어요." : "백업을 보내지 못했어요.");
+      }
+      return;
+    }
+    const url = URL.createObjectURL(file);
     const a = document.createElement("a");
     a.href = url;
     a.download = backupFileName(todayStr());
