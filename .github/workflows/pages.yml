@@ -23,7 +23,8 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      # 윈도우에서 만든 lock 파일엔 리눅스용 선택 패키지 일부가 빠져 `npm ci` 가 거부함 → install 로 채움
+      - run: npm install --no-audit --no-fund
       - run: npm test
       - run: npm run build
         env:
