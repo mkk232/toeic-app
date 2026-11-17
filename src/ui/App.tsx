@@ -1,5 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import type { ComponentType } from "preact";
+import { Settings } from "./Settings";
 
 export type Route = "/" | "/vocab" | "/lectures" | "/quiz" | "/listening" | "/wrong" | "/settings";
 
@@ -29,7 +30,7 @@ const ROUTES: Record<Route, ComponentType> = {
   "/quiz": () => <Placeholder title="강의 복습" />,
   "/listening": () => <Placeholder title="듣기" />,
   "/wrong": () => <Placeholder title="오답 노트" />,
-  "/settings": () => <Placeholder title="설정" />,
+  "/settings": Settings,
 };
 
 export function App() {

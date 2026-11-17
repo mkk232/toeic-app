@@ -19,3 +19,10 @@ test("#/settings 로 가면 설정 화면", async () => {
   });
   expect(screen.getByRole("heading", { name: "설정" })).toBeTruthy();
 });
+
+test("설정 화면에 API 키 입력칸과 엑셀 불러오기가 있다", async () => {
+  window.location.hash = "#/settings";
+  render(<App />);
+  expect(screen.getByLabelText("키 붙여 넣기")).toBeTruthy();
+  expect(screen.getByLabelText("엑셀 불러오기")).toBeTruthy();
+});
