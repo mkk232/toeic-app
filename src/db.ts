@@ -8,11 +8,11 @@ export interface Lecture { no: number; title: string }
 export interface LectureDone { id?: number; lectureNo: number; date: string }
 export interface Quiz {
   id?: number; lectureNo: number; kind: "new" | "review"; question: string; choices: string[];
-  answerIndex: number; explanationKo: string; createdAt: string; answeredAt?: string; correct?: boolean;
+  answerIndex: number; explanationKo: string; createdAt: string; answeredAt?: string; correct?: boolean; chosenIndex?: number;
 }
 export interface ListeningItem {
   id?: number; question: string; questionKo: string; choices: string[]; choicesKo: string[];
-  answerIndex: number; accent: "en-US" | "en-GB" | "en-AU"; createdAt: string; answeredAt?: string; correct?: boolean;
+  answerIndex: number; accent: "en-US" | "en-GB" | "en-AU"; createdAt: string; answeredAt?: string; correct?: boolean; chosenIndex?: number;
 }
 export interface WrongNote { id?: number; source: "quiz" | "listening"; refId: number; date: string; resolved: boolean }
 export interface Settings { apiKey: string; newPerDay: number; speechRate: number }

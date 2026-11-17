@@ -2,16 +2,15 @@ import { useEffect, useState } from "preact/hooks";
 import type { ComponentType } from "preact";
 import { Settings } from "./Settings";
 import { VocabSession } from "./VocabSession";
+import { Lectures } from "./Lectures";
+import { QuizSession } from "./QuizSession";
+import { WrongNotes } from "./WrongNotes";
 
-export type Route = "/" | "/vocab" | "/lectures" | "/quiz" | "/listening" | "/wrong" | "/settings";
+import type { Route } from "./nav";
 
 function currentRoute(): Route {
   const r = window.location.hash.replace(/^#/, "") || "/";
   return (ROUTES as Record<string, unknown>)[r] ? (r as Route) : "/";
-}
-
-export function go(route: Route) {
-  window.location.hash = `#${route}`;
 }
 
 function Placeholder({ title }: { title: string }) {
@@ -27,10 +26,10 @@ function Placeholder({ title }: { title: string }) {
 const ROUTES: Record<Route, ComponentType> = {
   "/": () => <Placeholder title="오늘 할 일" />,
   "/vocab": VocabSession,
-  "/lectures": () => <Placeholder title="강의" />,
-  "/quiz": () => <Placeholder title="강의 복습" />,
+  "/lectures": Lectures,
+  "/quiz": QuizSession,
   "/listening": () => <Placeholder title="듣기" />,
-  "/wrong": () => <Placeholder title="오답 노트" />,
+  "/wrong": WrongNotes,
   "/settings": Settings,
 };
 
